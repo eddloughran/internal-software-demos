@@ -1,0 +1,75 @@
+name: Deploy ADF ARM Template
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target environment (dev, prod)"
+        required: true
+        default: "prod"
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout deployment workflow
+      uses: actions/checkout@v4
+      with:
+        ref: main
+    
+    - name: Load env config
+      id: load_env
+      run: |
+        echo "Loading config for ${{ github.event.inputs.environment }}..."
+        set -a
+        source .github/workflows/config/${{ github.event.inputs.environment }}.env
+        set +a
+        cat .github/workflows/config/${{ github.event.inputs.environment }}.env >> $GITHUB_ENV
+
+    - name: Checkout ADF publish branch
+      uses: actions/checkout@v4
+      with:
+        ref: adf_publish
+        path: adf_publish
+
+    - name: Add resourcesToIgnore to parameters
+      run: |
+        python3 <<'EOF'
+        import json, os
+
+        template_file = f"adf_publish/{os.environ['DEV_DATA_FACTORY_NAME']}/ARMTemplateForFactory.json"
+        ignore_list = os.environ.get("RESOURCE_TYPES_TO_IGNORE", "").split(",")
+        print(f"Ignore resource types: {ignore_list}")
+
+        # Load the template
+        with open(template_file) as f:
+            template = json.load(f)
+
+        # Add condition to skip resources of a certain type
+        for resource in template["resources"]:
+            if resource["type"] in ignore_list:
+                resource["condition"] = False
+                print(f"Skipping resource: {resource['name']}")
+
+        with open(template_file, "w") as f:
+            json.dump(template, f, indent=2)
+        EOF
+
+    - name: Azure Login
+      uses: azure/login@v2
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: Run ARM deploy
+      id: deploy
+      uses: azure/arm-deploy@v2
+      with:
+        resourceGroupName: ${{ env.RESOURCE_GROUP }}
+        template: adf_publish/${{ env.DEV_DATA_FACTORY_NAME }}/ARMTemplateForFactory.json
+        parameters: >-
+          adf_publish/${{ env.DEV_DATA_FACTORY_NAME }}/ARMTemplateParametersForFactory.json
+          factoryName=${{ env.PROD_DATA_FACTORY_NAME }}
+          ls-dataplatform-datalakegen2_properties_typeProperties_url="https://${{ env.STORAGE_ACCOUNT_FQDN }}/"
+          ls-dataplatform-keyvault_properties_typeProperties_baseUrl="https://${{ env.KEYVAULT_FQDN }}/"
+          ls_Databricks_SQL_Mscrm_properties_typeProperties_clusterId=${{ env.DBX_CLUSTER_ID }}
