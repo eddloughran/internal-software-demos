@@ -60,4 +60,5 @@
 - Under `"Microsoft.DataFactory/factories/linkedServices"` properties add:
     - `"clusterId": "=",`
     - `"domain": "=",`
+    - `"workspaceResourceId": "=",`
 - Publish changes to see them reflected in git
