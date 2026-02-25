@@ -74,3 +74,4 @@ jobs:
           ls-dataplatform-keyvault_properties_typeProperties_baseUrl="https://${{ env.KEYVAULT_FQDN }}/"
           ls_Databricks_SQL_Mscrm_properties_typeProperties_clusterId=${{ env.DBX_CLUSTER_ID }}
           ls_Databricks_SQL_Mscrm_properties_typeProperties_domain=${{ env.DBX_DOMAIN }}
+          ls_Databricks_SQL_Mscrm_properties_typeProperties_workspaceResourceId=${{ env.DBX_WORKSPACE_RESOURCE_ID }}
