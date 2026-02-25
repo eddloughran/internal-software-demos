@@ -73,3 +73,4 @@ jobs:
           ls-dataplatform-datalakegen2_properties_typeProperties_url="https://${{ env.STORAGE_ACCOUNT_FQDN }}/"
           ls-dataplatform-keyvault_properties_typeProperties_baseUrl="https://${{ env.KEYVAULT_FQDN }}/"
           ls_Databricks_SQL_Mscrm_properties_typeProperties_clusterId=${{ env.DBX_CLUSTER_ID }}
+          ls_Databricks_SQL_Mscrm_properties_typeProperties_domain=${{ env.DBX_DOMAIN }}
